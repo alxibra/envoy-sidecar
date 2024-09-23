@@ -1,0 +1,39 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: envoy
+  labels:
+    app: envoy
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: envoy
+  template:
+    metadata:
+      labels:
+        app: envoy
+    spec:
+      containers:
+        # The main application container
+        - name: main-app
+          image: nginx:1.21
+          ports:
+            - containerPort: 80
+
+        # The Envoy sidecar container
+        - name: envoy
+          image: envoyproxy/envoy:v1.20.0
+          ports:
+            - containerPort: 8080  # Expose Envoy listener
+            - containerPort: 9901  # Expose Envoy admin
+          volumeMounts:
+            - name: envoy-config
+              mountPath: /etc/envoy
+          args:
+            - "--config-path"
+            - "/etc/envoy/envoy.yaml" 
+      volumes:
+        - name: envoy-config
+          configMap:
+            name: envoy-config
